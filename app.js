@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let recordingStartTime;
     let audioBlob;
     let audioUrl;
+    let animationFrameId;
+    
+    // Clip queue to store multiple recordings
+    let clipQueue = [];
     
     // Set canvas size
     function resizeCanvas() {
@@ -114,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const draw = () => {
             // Schedule next frame
-            requestAnimationFrame(draw);
+            animationFrameId = requestAnimationFrame(draw);
             
             // Get waveform data
             analyser.getByteTimeDomainData(dataArray);
@@ -148,6 +152,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             canvasCtx.stroke();
         };
         
+        // Cancel any existing animation frame before starting a new one
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        
+        // Start the animation
         draw();
     }
     
@@ -174,12 +184,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Create blob and URL
                 audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 
-                // Revoke previous URL if exists
-                if (audioUrl) {
-                    URL.revokeObjectURL(audioUrl);
-                }
+                // Add to clip queue
+                const timestamp = new Date();
+                const clipName = `Clip ${clipQueue.length + 1} - ${formatTimestamp(timestamp)}`;
                 
-                audioUrl = URL.createObjectURL(audioBlob);
+                clipQueue.push({
+                    id: Date.now(),
+                    name: clipName,
+                    blob: audioBlob,
+                    url: URL.createObjectURL(audioBlob),
+                    timestamp: timestamp,
+                    duration: recordingDuration
+                });
+                
+                // Update UI
+                updateClipQueue();
                 
                 // Enable download button
                 downloadButton.disabled = false;
@@ -189,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 recordButton.classList.remove('recording');
                 isRecording = false;
                 
-                showStatus('Recording complete! Click "Download Clip" to save.', 'success');
+                showStatus('Recording complete! Clip added to queue.', 'success');
             };
             
             // Get recording duration from input
@@ -254,6 +273,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     
+    // Format timestamp for clip names
+    function formatTimestamp(date) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
     // Show status message
     function showStatus(message, type = '') {
         statusMessage.textContent = message;
@@ -264,14 +288,109 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
-    // Download recorded audio
-    function downloadAudio() {
-        if (!audioBlob) return;
+    // Update clip queue UI
+    function updateClipQueue() {
+        // Check if clip queue container exists, if not create it
+        let clipQueueContainer = document.querySelector('.clip-queue');
+        if (!clipQueueContainer) {
+            clipQueueContainer = document.createElement('div');
+            clipQueueContainer.className = 'clip-queue';
+            clipQueueContainer.innerHTML = '<h2>Saved Clips</h2>';
+            document.querySelector('.container').insertBefore(
+                clipQueueContainer, 
+                document.querySelector('.download-container')
+            );
+        }
         
+        // Clear existing clips
+        const clipsContainer = clipQueueContainer.querySelector('.clips-container') || document.createElement('div');
+        clipsContainer.className = 'clips-container';
+        clipsContainer.innerHTML = '';
+        
+        // Add clips to container
+        if (clipQueue.length === 0) {
+            clipsContainer.innerHTML = '<p class="no-clips">No clips recorded yet</p>';
+        } else {
+            clipQueue.forEach((clip, index) => {
+                const clipElement = document.createElement('div');
+                clipElement.className = 'clip-item';
+                clipElement.dataset.id = clip.id;
+                
+                clipElement.innerHTML = `
+                    <div class="clip-info">
+                        <span class="clip-name">${clip.name}</span>
+                        <span class="clip-duration">${formatTime(clip.duration)}</span>
+                    </div>
+                    <div class="clip-controls">
+                        <button class="play-clip">Play</button>
+                        <button class="download-clip">Download</button>
+                        <button class="delete-clip">Delete</button>
+                    </div>
+                `;
+                
+                clipsContainer.appendChild(clipElement);
+                
+                // Add event listeners for play button
+                clipElement.querySelector('.play-clip').addEventListener('click', () => {
+                    playClip(clip);
+                });
+                
+                // Add event listeners for download button
+                clipElement.querySelector('.download-clip').addEventListener('click', () => {
+                    downloadClip(clip);
+                });
+                
+                // Add event listeners for delete button
+                clipElement.querySelector('.delete-clip').addEventListener('click', () => {
+                    deleteClip(clip.id);
+                });
+            });
+        }
+        
+        // Add clips container to queue container if it's not already there
+        if (!clipQueueContainer.querySelector('.clips-container')) {
+            clipQueueContainer.appendChild(clipsContainer);
+        }
+    }
+    
+    // Play clip
+    function playClip(clip) {
+        const audio = new Audio(clip.url);
+        audio.play();
+    }
+    
+    // Download clip
+    function downloadClip(clip) {
         const downloadLink = document.createElement('a');
-        downloadLink.href = audioUrl;
-        downloadLink.download = `audio-clip-${new Date().toISOString().slice(0, 19).replace(/[:-]/g, '')}.wav`;
+        downloadLink.href = clip.url;
+        downloadLink.download = `audio-clip-${clip.timestamp.toISOString().slice(0, 19).replace(/[:-]/g, '')}.wav`;
         downloadLink.click();
+    }
+    
+    // Delete clip
+    function deleteClip(id) {
+        const clipIndex = clipQueue.findIndex(clip => clip.id === id);
+        
+        if (clipIndex !== -1) {
+            // Revoke object URL to free memory
+            URL.revokeObjectURL(clipQueue[clipIndex].url);
+            
+            // Remove from queue
+            clipQueue.splice(clipIndex, 1);
+            
+            // Update UI
+            updateClipQueue();
+            
+            showStatus('Clip deleted', 'success');
+        }
+    }
+    
+    // Download current audio
+    function downloadAudio() {
+        if (clipQueue.length === 0) return;
+        
+        // Download the most recent clip
+        downloadClip(clipQueue[clipQueue.length - 1]);
     }
     
     // Event listeners
@@ -296,6 +415,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (micSelect.options.length > 0) {
                 await connectMicrophone();
             }
+            
+            // Initialize empty clip queue
+            updateClipQueue();
         }
     }
     

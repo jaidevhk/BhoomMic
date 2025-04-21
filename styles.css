@@ -27,6 +27,14 @@ h1 {
     letter-spacing: 1px;
 }
 
+h2 {
+    font-size: 1.4rem;
+    margin: 25px 0 15px;
+    font-weight: 400;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
 .mic-selection {
     margin-bottom: 25px;
 }
@@ -125,6 +133,98 @@ button {
     font-weight: bold;
 }
 
+/* Clip Queue Styles */
+.clip-queue {
+    margin: 30px 0;
+}
+
+.clips-container {
+    margin-top: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.no-clips {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+.clip-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    background-color: #fcfcfc;
+    transition: background-color 0.2s ease;
+}
+
+.clip-item:last-child {
+    border-bottom: none;
+}
+
+.clip-item:hover {
+    background-color: #f5f5f5;
+}
+
+.clip-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.clip-name {
+    font-weight: 500;
+}
+
+.clip-duration {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.clip-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.clip-controls button {
+    padding: 6px 12px;
+    font-size: 14px;
+    min-width: 80px;
+}
+
+.play-clip {
+    background-color: #000;
+    color: white;
+}
+
+.play-clip:hover {
+    background-color: #333;
+}
+
+.download-clip {
+    background-color: #f8f8f8;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.download-clip:hover {
+    background-color: #eee;
+}
+
+.delete-clip {
+    background-color: #fff;
+    color: #e53935;
+    border: 1px solid #ffcdd2;
+}
+
+.delete-clip:hover {
+    background-color: #ffebee;
+}
+
 .status-message {
     margin-top: 20px;
     padding: 10px;
@@ -156,5 +256,19 @@ button {
     
     .record-button-container {
         flex: 2;
+    }
+    
+    .clip-item {
+        padding: 15px 20px;
+    }
+    
+    .clip-controls {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 599px) {
+    .clip-controls {
+        flex-direction: column;
     }
 } 
