@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Clipper</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Clipper</h1>
+        
+        <div class="mic-selection">
+            <label for="mic-select">Select Microphone</label>
+            <select id="mic-select"></select>
+        </div>
+        
+        <div class="waveform-container">
+            <canvas id="waveform"></canvas>
+        </div>
+        
+        <div class="controls">
+            <div class="duration-input">
+                <label for="duration">Recording Duration (seconds)</label>
+                <input type="number" id="duration" min="1" max="300" value="10">
+            </div>
+            
+            <div class="record-button-container">
+                <button id="record-button">Record</button>
+                <span id="time-display">00:00</span>
+            </div>
+        </div>
+        
+        <div class="download-container">
+            <button id="download-button" disabled>Download Clip</button>
+        </div>
+        
+        <div class="status-message" id="status-message"></div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html> 
